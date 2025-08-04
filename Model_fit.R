@@ -85,11 +85,14 @@ library(ade4)
 library(reshape2)
 library(dplyr)
 library(tibble)
+library(readxl)
+
+final_dataset <- read_excel("final_dataset.xlsx", sheet = 1)
 
 final_dataset$Overwintering <- factor(final_dataset$Overwintering, 
-                                      levels = c("egg", "larva", "pupa", "adult"))
+                                      levels = c("Egg", "Larva", "Pupa", "Adult"),ordered=TRUE)
 final_dataset$Host.group <- factor(final_dataset$Host.group,
-                                   levels = c("Cryptogam", "Herbaceous", "Woody", "Detritus"))
+                                   levels = c("Cryptogam", "Herbaceous", "Woody", "Detritus"),ordered=TRUE)
 final_dataset$Distribution <- factor(final_dataset$Distribution,
                                      levels = c("Europe",
                                                 "West Palearctic",
@@ -98,8 +101,8 @@ final_dataset$Distribution <- factor(final_dataset$Distribution,
                                                 "Holoarctic",
                                                 "Cosmopolite"))
 final_dataset$`Leaf action` <- factor(final_dataset$`Leaf action`,
-                                      levels = c("mining", "folding", "rolling", "tying", 
-                                                 "stem cutting", "webbing/silken galeries", "without any action"))
+                                      levels = c("Mining", "Folding", "Rolling", "Tying", 
+                                                 "Stem cutting", "Webbing/silken galeries", "Without.any.action"))
 
 final_dataset <- final_dataset %>%
   mutate(
@@ -121,7 +124,9 @@ cwm_results <- final_dataset %>%
     Distribution_cwm = weighted.mean(Distribution, Number, na.rm = TRUE),
     Host.group_cwm = weighted.mean(Host.group, Number, na.rm = TRUE),
     Overwintering_cwm = weighted.mean(Overwintering, Number, na.rm = TRUE),
-    Leaf_action_cwm = weighted.mean(`Leaf action`, Number, na.rm = TRUE),Abundance=sum(Number)
+    Leaf_action_cwm = weighted.mean(`Leaf action`, Number, na.rm = TRUE),
+    Abundance = sum(Number),
+    .groups = "drop"
   )
 
 # Display results
@@ -148,21 +153,17 @@ confint(mod1, method = "boot", nsim = 999)
 library(vegan)
 # Step 1: Select only the CWM trait columns
 trait_matrix <- cwm_results %>%
-  ungroup() %>%  
   select(Dietary_cwm, Red_list_cwm, Wingspan_cwm, Distribution_cwm,
          Host.group_cwm, Overwintering_cwm, Leaf_action_cwm)
 
-# Optional: Standardize trait values (recommended for mixed-scale data)
 trait_matrix_scaled <- scale(trait_matrix)
 
-# Step 2: Run PERMANOVA with adonis2
 mod_all_traits <- adonis2(trait_matrix_scaled ~ Elevation + Mountain,
                           data = cwm_results,
                           method = "euclidean",
                           permutations = 999)
 
-# Step 3: Output results
-print(mod_all_traits)
+summary(mod_all_traits)
 
 # Test for Elevation
 disper_test <- betadisper(dist(trait_matrix_scaled), cwm_results$Elevation)
