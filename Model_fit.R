@@ -77,7 +77,6 @@ tidy_mod <- tidy(mod, effects = "fixed", conf.int = TRUE)
 kable(tidy_mod, digits = 3, caption = "Model Estimates and 95% Confidence Intervals")
 
 ################################################################################################################
-# Load required libraries
 library(dplyr)
 library(lme4)
 library(car)
@@ -85,19 +84,30 @@ library(DHARMa)
 library(ade4)
 library(reshape2)
 library(dplyr)
-library(tibble)  # Load tibble for row name conversion
+library(tibble)
 
 final_dataset$Overwintering <- factor(final_dataset$Overwintering, 
                                       levels = c("egg", "larva", "pupa", "adult"))
 final_dataset$Host.group <- factor(final_dataset$Host.group,
                                    levels = c("Cryptogam", "Herbaceous", "Woody", "Detritus"))
+final_dataset$Distribution <- factor(final_dataset$Distribution,
+                                     levels = c("Europe",
+                                                "West Palearctic",
+                                                "Eurosiberian",
+                                                "Palearctic",
+                                                "Holoarctic",
+                                                "Cosmopolite"))
+final_dataset$`Leaf action` <- factor(final_dataset$`Leaf action`,
+                                      levels = c("mining", "folding", "rolling", "tying", 
+                                                 "stem cutting", "webbing/silken galeries", "without any action"))
+
 final_dataset <- final_dataset %>%
   mutate(
     Dietary = as.numeric(as.factor(Dietary)),
-    Distribution = as.factor(Distribution)),
-    Host.group = as.numeric((Host.group)),
+    Distribution = as.numeric(Distribution),
+    Host.group = as.numeric(Host.group),
     Overwintering = as.numeric(Overwintering),
-    `Leaf action` = as.factor(`Leaf action`)
+    `Leaf action` = as.numeric(`Leaf action`)
   )
 
 colnames(final_dataset)
