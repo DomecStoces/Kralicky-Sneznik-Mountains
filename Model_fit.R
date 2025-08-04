@@ -139,17 +139,34 @@ cwm_results <- cwm_results %>%
   mutate(Mountain = as.factor(Mountain))
 
 # Fit Generalized Linear Mixed Model (GLMM)
-mod1 <- lm(Dietary_cwm ~ Elevation + Mountain,
+mod1 <- lm(Leaf_action_cwm ~ Elevation + Mountain,
                data = cwm_results)
 Anova(mod1,type = "III")
 
 confint(mod1, method = "boot", nsim = 999)
 
 library(vegan)
-d <- dist(cwm_results$Distribution_cwm)
-mod2 <- adonis2(d ~ Elevation, data = cwm_results,permutations = 999)
-print(mod2)
+# Step 1: Select only the CWM trait columns
+trait_matrix <- cwm_results %>%
+  ungroup() %>%  
+  select(Dietary_cwm, Red_list_cwm, Wingspan_cwm, Distribution_cwm,
+         Host.group_cwm, Overwintering_cwm, Leaf_action_cwm)
 
+# Optional: Standardize trait values (recommended for mixed-scale data)
+trait_matrix_scaled <- scale(trait_matrix)
+
+# Step 2: Run PERMANOVA with adonis2
+mod_all_traits <- adonis2(trait_matrix_scaled ~ Elevation + Mountain,
+                          data = cwm_results,
+                          method = "euclidean",
+                          permutations = 999)
+
+# Step 3: Output results
+print(mod_all_traits)
+
+# Test for Elevation
+disper_test <- betadisper(dist(trait_matrix_scaled), cwm_results$Elevation)
+anova(disper_test)
 
 #####
 library(pbkrtest)
