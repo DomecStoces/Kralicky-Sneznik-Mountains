@@ -87,13 +87,17 @@ library(reshape2)
 library(dplyr)
 library(tibble)  # Load tibble for row name conversion
 
+final_dataset$Overwintering <- factor(final_dataset$Overwintering, 
+                                      levels = c("egg", "larva", "pupa", "adult"))
+final_dataset$Host.group <- factor(final_dataset$Host.group,
+                                   levels = c("Cryptogam", "Herbaceous", "Woody", "Detritus"))
 final_dataset <- final_dataset %>%
   mutate(
     Dietary = as.numeric(as.factor(Dietary)),
-    Distribution = as.numeric(as.factor(Distribution)),
-    `Host species` = as.numeric(as.factor(`Host species`)),
-    Overwintering = as.numeric(as.factor(Overwintering)),
-    `Leaf action` = as.numeric(as.factor(`Leaf action`))
+    Distribution = as.factor(Distribution)),
+    Host.group = as.numeric((Host.group)),
+    Overwintering = as.numeric(Overwintering),
+    `Leaf action` = as.factor(`Leaf action`)
   )
 
 colnames(final_dataset)
@@ -105,7 +109,7 @@ cwm_results <- final_dataset %>%
     Red_list_cwm = weighted.mean(`Red list species`, Number, na.rm = TRUE),
     Wingspan_cwm = weighted.mean(Wingspan, Number, na.rm = TRUE),
     Distribution_cwm = weighted.mean(Distribution, Number, na.rm = TRUE),
-    Host_species_cwm = weighted.mean(`Host species`, Number, na.rm = TRUE),
+    Host.group_cwm = weighted.mean(Host.group, Number, na.rm = TRUE),
     Overwintering_cwm = weighted.mean(Overwintering, Number, na.rm = TRUE),
     Leaf_action_cwm = weighted.mean(`Leaf action`, Number, na.rm = TRUE),Abundance=sum(Number)
   )
@@ -122,8 +126,7 @@ cwm_results <- cwm_results %>%
 
 # Convert categorical variables to factors
 cwm_results <- cwm_results %>%
-  mutate(Mountain = as.factor(Mountain),
-         `Time period` = as.factor(`Time period`))
+  mutate(Mountain = as.factor(Mountain))
 
 # Fit Generalized Linear Mixed Model (GLMM)
 mod1 <- lm(Dietary_cwm ~ Elevation + Mountain,
