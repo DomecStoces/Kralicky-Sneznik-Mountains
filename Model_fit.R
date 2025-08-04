@@ -77,7 +77,6 @@ tidy_mod <- tidy(mod, effects = "fixed", conf.int = TRUE)
 kable(tidy_mod, digits = 3, caption = "Model Estimates and 95% Confidence Intervals")
 
 ################################################################################################################
-library(dplyr)
 library(lme4)
 library(car)
 library(DHARMa)
@@ -100,9 +99,21 @@ final_dataset$Distribution <- factor(final_dataset$Distribution,
                                                 "Palearctic",
                                                 "Holoarctic",
                                                 "Cosmopolite"))
+final_dataset$`Leaf action` <- tolower(gsub("\\.", " ", final_dataset$`Leaf action`))
+final_dataset$`Leaf action` <- trimws(final_dataset$`Leaf action`)
+unique(final_dataset$`Leaf action`)
 final_dataset$`Leaf action` <- factor(final_dataset$`Leaf action`,
-                                      levels = c("Mining", "Folding", "Rolling", "Tying", 
-                                                 "Stem cutting", "Webbing/silken galeries", "Without.any.action"))
+                                      levels = c(
+                                        "mining",
+                                        "folding",
+                                        "rolling",
+                                        "tying",
+                                        "stem cutting",
+                                        "webbing/silken galeries",
+                                        "without any action"
+                                      ),
+                                      ordered = TRUE
+)
 
 final_dataset <- final_dataset %>%
   mutate(
@@ -144,7 +155,7 @@ cwm_results <- cwm_results %>%
   mutate(Mountain = as.factor(Mountain))
 
 # Fit Generalized Linear Mixed Model (GLMM)
-mod1 <- lm(Leaf_action_cwm ~ Elevation + Mountain,
+mod1 <- lm(Dietary_cwm  ~ Elevation + Mountain,
                data = cwm_results)
 Anova(mod1,type = "III")
 
@@ -158,12 +169,10 @@ trait_matrix <- cwm_results %>%
 
 trait_matrix_scaled <- scale(trait_matrix)
 
-mod_all_traits <- adonis2(trait_matrix_scaled ~ Elevation + Mountain,
-                          data = cwm_results,
-                          method = "euclidean",
-                          permutations = 999)
+rda_model <- rda(trait_matrix_scaled ~ Elevation + Mountain, data = cwm_results)
+anova(rda_model, permutations = 999)
 
-summary(mod_all_traits)
+print(mod_all_traits)
 
 # Test for Elevation
 disper_test <- betadisper(dist(trait_matrix_scaled), cwm_results$Elevation)
