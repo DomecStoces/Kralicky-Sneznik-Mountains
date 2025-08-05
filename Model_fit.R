@@ -217,6 +217,7 @@ summary(pb)
 isSingular(mod1) #if random are properly estimated and does not collapse to zero variance
 VarCorr(mod1) #what variance Time period has
 
+# Richness, Eveness, and Shannon
 #####
 library(dplyr)
 library(tidyr)
@@ -299,3 +300,41 @@ ggplot(evenness_df, aes(x = Elevation, y = Evenness)) +
   geom_smooth(method = "loess") +
   labs(title = "Pielou’s Evenness (J′) across Elevation",
        x = "Elevation", y = "Evenness (J′)")
+
+#####
+# Total abundance 
+#####
+# Create a summary of total abundance per site
+abundance_summary <- final_dataset %>%
+  group_by(Elevation, Mountain) %>%
+  summarise(
+    Total_abundance = sum(Number, na.rm = TRUE),
+    .groups = "drop"
+  )
+ggplot(abundance_summary, aes(x = Elevation, y = Total_abundance)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  labs(
+    x = "Elevation",
+    y = "Total abundance"
+  ) +
+  theme_minimal()
+
+# Fit robust linear model (to account for non-normality/outliers)
+mod_abundance_rlm <- rlm(Total_abundance ~ Elevation + Mountain, data = abundance_summary)
+summary(mod_abundance_rlm)
+library(boot)
+
+# Define bootstrap function
+boot_abund_fn <- function(data, indices) {
+  d <- data[indices, ]
+  fit <- rlm(Total_abundance ~ Elevation + Mountain, data = d)
+  return(coef(fit))
+}
+
+# Perform bootstrapping
+set.seed(123)
+boot_abund <- boot(data = abundance_summary, statistic = boot_abund_fn, R = 999)
+
+# 95% percentile CI for elevation
+boot.ci(boot_abund, type = "perc", index = 2)  # index = 2 for Elevation coefficient
