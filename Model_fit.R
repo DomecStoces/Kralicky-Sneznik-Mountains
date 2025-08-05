@@ -154,22 +154,22 @@ cwm_results <- cwm_results %>%
 # lm() for CWM analysis
 #####
 # Fit Generalized Linear Mixed Model (GLMM)
-mod1 <- lm(Dietary_cwm  ~ Elevation + Mountain,
+mod1 <- lm(Host.group_cwm  ~ Elevation + Mountain,
                data = cwm_results)
 Anova(mod1,type = "III")
 confint(mod1, method = "boot", nsim = 999)
 # Simulate residuals for lm()
-sim_res <- simulateResiduals(fittedModel = mod_rob, plot = TRUE)
+sim_res <- simulateResiduals(fittedModel = mod1, plot = TRUE)
 shapiro.test(residuals(mod1))
 #####
 library(MASS)
-mod_rob <- rlm(Distribution_cwm ~ Elevation + Mountain, data = cwm_results)
+mod_rob <- rlm(Leaf_action_cwm ~ Elevation + Mountain, data = cwm_results)
 summary(mod_rob)
 
 # Function for bootstrapping
 boot_fn <- function(data, indices) {
   d <- data[indices, ]  # Resample rows
-  fit <- rlm(Distribution_cwm ~ Elevation + Mountain, data = d)
+  fit <- rlm(Leaf_action_cwm ~ Elevation + Mountain, data = d)
   return(coef(fit))  # Return model coefficients
 }
 set.seed(123)  # for reproducibility
