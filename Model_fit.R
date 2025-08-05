@@ -79,12 +79,13 @@ kable(tidy_mod, digits = 3, caption = "Model Estimates and 95% Confidence Interv
 ################################################################################################################
 library(lme4)
 library(car)
-library(DHARMa)
-library(ade4)
 library(reshape2)
 library(dplyr)
 library(tibble)
 library(readxl)
+library(emmeans)
+library(DHARMa)
+library(boot)
 
 final_dataset <- read_excel("final_dataset.xlsx", sheet = 1)
 
@@ -150,18 +151,37 @@ write.csv(cwm_results, "cwm_results.csv", row.names = FALSE)
 cwm_results <- cwm_results %>%
   mutate(Mountain = as.factor(Mountain))
 
+# lm() for CWM analysis
+#####
 # Fit Generalized Linear Mixed Model (GLMM)
 mod1 <- lm(Dietary_cwm  ~ Elevation + Mountain,
                data = cwm_results)
 Anova(mod1,type = "III")
 confint(mod1, method = "boot", nsim = 999)
+# Simulate residuals for lm()
+sim_res <- simulateResiduals(fittedModel = mod_rob, plot = TRUE)
+shapiro.test(residuals(mod1))
+#####
+library(MASS)
+mod_rob <- rlm(Distribution_cwm ~ Elevation + Mountain, data = cwm_results)
+summary(mod_rob)
 
-plot(mod1)
+# Function for bootstrapping
+boot_fn <- function(data, indices) {
+  d <- data[indices, ]  # Resample rows
+  fit <- rlm(Distribution_cwm ~ Elevation + Mountain, data = d)
+  return(coef(fit))  # Return model coefficients
+}
+set.seed(123)  # for reproducibility
+boot_rob <- boot(data = cwm_results, statistic = boot_fn, R = 999)
+boot.ci(boot_rob, type = "perc", index = 1)  # Intercept
+boot.ci(boot_rob, type = "perc", index = 2)  # Elevation
+boot.ci(boot_rob, type = "perc", index = 3)  # Mountain
 
-library(vegan)
 
 # PERMANOVA - not useful for factor of 2 levels 
 #####
+library(vegan)
 # Step 1: Select only the CWM trait columns
 trait_matrix <- dplyr::select(cwm_results, 
                               Dietary_cwm, Red_list_cwm, Wingspan_cwm, 
