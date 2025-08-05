@@ -150,29 +150,30 @@ write.csv(cwm_results, "cwm_results.csv", row.names = FALSE)
 cwm_results <- cwm_results %>%
   mutate(Mountain = as.factor(Mountain))
 
-# Convert categorical variables to factors
-cwm_results <- cwm_results %>%
-  mutate(Mountain = as.factor(Mountain))
-
 # Fit Generalized Linear Mixed Model (GLMM)
 mod1 <- lm(Dietary_cwm  ~ Elevation + Mountain,
                data = cwm_results)
 Anova(mod1,type = "III")
-
 confint(mod1, method = "boot", nsim = 999)
 
+plot(mod1)
+
 library(vegan)
+
+# PERMANOVA - not useful for factor of 2 levels 
+#####
 # Step 1: Select only the CWM trait columns
-trait_matrix <- cwm_results %>%
-  select(Dietary_cwm, Red_list_cwm, Wingspan_cwm, Distribution_cwm,
-         Host.group_cwm, Overwintering_cwm, Leaf_action_cwm)
+trait_matrix <- dplyr::select(cwm_results, 
+                              Dietary_cwm, Red_list_cwm, Wingspan_cwm, 
+                              Distribution_cwm, Host.group_cwm, 
+                              Overwintering_cwm, Leaf_action_cwm)
 
 trait_matrix_scaled <- scale(trait_matrix)
 
-rda_model <- rda(trait_matrix_scaled ~ Elevation + Mountain, data = cwm_results)
-anova(rda_model, permutations = 999)
+model <- adonis2(trait_matrix_scaled ~ Elevation, data = cwm_results,method = "euclidean")
+anova(model, permutations = 999)
 
-print(mod_all_traits)
+print(model)
 
 # Test for Elevation
 disper_test <- betadisper(dist(trait_matrix_scaled), cwm_results$Elevation)
